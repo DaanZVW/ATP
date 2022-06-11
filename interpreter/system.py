@@ -8,7 +8,8 @@ class system:
 
     pointer: int = field(default=0, init=False)
     memory: List[int] = field(default_factory=list, init=False)
-    functions: Dict[str, Any] = field(default_factory=dict, init=False)
+    functions: Dict[str, Any] = field(default_factory=dict, init=False, repr=False)
+    registered_functions: List[str] = field(default_factory=list, init=False)
 
     def __post_init__(self, memory_size: int):
         self.memory = [0] * memory_size

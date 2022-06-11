@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple, Callable, Any
+from typing import List, Tuple
 from .lexer import found_token
 from .system import system
 
@@ -122,6 +122,12 @@ class FunctionNode(BaseNode):
     def configure(self):
         self.func_name = self.params[0].content
 
+    def perform(self, sys: system, index: int = 0):
+        if index < len(self.func_body):
+            self.func_body[index].perform(sys)
+            return self.perform(sys, index+1)
+
+    # Node functions
     def register_body(self, func_body: List[BaseNode]):
         self.func_body += func_body
 
@@ -138,6 +144,17 @@ class CallNode(BaseNode):
     # Base vars
     name = 'CallNode'
     amount_params = (1,)
+
+    # Node vars
+    func_name: str = field(init=False)
+
+    def configure(self):
+        self.func_name = self.params[0].content
+
+    def perform(self, sys: system):
+        if self.func_name not in sys.functions:
+            raise RuntimeError(f"Function '{self.func_name}' not found")
+        sys.functions[self.func_name].perform(sys)
 
 
 @dataclass

@@ -2,7 +2,7 @@ plus pointer 3
 min pointer 2
 move pointer to 5
 show pointer
-begin function test
+make function test
     greater compare between 1 3
     less compare between 1 3
     equal compare between 1 3

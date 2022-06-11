@@ -1,0 +1,11 @@
+make function increase
+    increment pointer by 3
+close
+
+make function multiply
+    multiply pointer by 3
+close
+
+run function increase
+run function multiply
+run function multiply
