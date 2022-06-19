@@ -32,7 +32,11 @@ class interpreter:
         return final_state
 
     def getAllStates(self) -> List[system]:
-        return list(self.generator)
+        states = list(self.generator)
+        if not states:
+            raise RuntimeError("An unknown error has occurred! Most likely because of a infinite loop")
+        return states
+
 
 
 

@@ -1,16 +1,22 @@
 import time
 from enum import Enum
+from typing import List, Union, Tuple
 from dataclasses import dataclass, field
 
 
 class tokens(Enum):
-    RIGHT = 'plus pointer'
-    LEFT = 'min pointer'
-    MOVE = 'move pointer to'
-    PRINT = 'show pointer'
+    RIGHT_MEM = 'plus memory pointer by'
+    RIGHT_INS = 'plus instruction pointer by'
+    LEFT_MEM = 'min memory pointer by'
+    LEFT_INS = 'min instruction pointer by'
+    MOVE_MEM = 'move memory pointer to'
+    MOVE_INS = 'move instruction pointer to'
+    PRINT = 'show memory'
     FUNCTION = 'make function'
-    CLOSE = 'close'
+    CLOSE = 'close function'
     CALL = 'run function'
+    EXIT = 'exit'
+    COMMENT = '~'
 
     # Variable checking
     GREATER = 'greater compare between'
@@ -18,9 +24,9 @@ class tokens(Enum):
     EQUAL = 'equal compare between'
 
     # Variable manipulation
-    INCREMENT = 'increment pointer by'
-    DECREMENT = 'decrement pointer by'
-    MULTIPLY = 'multiply pointer by'
+    INCREMENT = 'increment memory pointer by'
+    DECREMENT = 'decrement memory pointer by'
+    MULTIPLY = 'multiply memory pointer by'
 
     # Others
     VARIABLE = ''
@@ -34,78 +40,70 @@ class found_token:
     content: str = field(default='')
 
 
-def fixVariableTokens(checklist: list[found_token], b_index: int = 0, tmp_list=None) -> list[found_token]:
+def fixVariableTokens(checklist: List[found_token], b_index: int = 0, tmp_list=None) -> List[found_token]:
     """
-    Function that reinterprets the row and checks if possible tokens has been missed
+    Function that reinterprets the row and checks if possible longer tokens has been missed
     :param checklist: List with found tokens
     :param b_index: Internally used row, should not be used
     :param tmp_list: Internally used list for checking the possible tokens, should not be used
     :return: Fixed row with the correct tokens
     """
+    # If tmp_list is not a list, make it a list
     if tmp_list is None:
         tmp_list = []
 
     # Check if the b_index is larger than the checklist
     # Otherwise return the fixed row
-    if len(checklist) > b_index:
-        if checklist[b_index].token != tokens.VARIABLE:
-            tmp_list.clear()
-            return fixVariableTokens(checklist, b_index + 1, tmp_list)
-
-        tmp_list.append(checklist[b_index])
-    else:
+    if len(checklist) <= b_index:
         return checklist
 
-    # ![Complex function alert]!
-    # This function does 2 things
-    # 1. Filter the tokens with more than 2 keywords (space between) <- long_token
-    # 2. Return the first long_token where the first word is the same, otherwise return None
-    token = next(filter(lambda long_token:
-                        next(filter(lambda check_token: check_token.content == long_token.value.split(" ")[0],
-                                    tmp_list), False),
-                        filter(lambda all_token: all_token.value.count(" ") > 0, tokens)
-                        ), None
-                 )
+    # Append a found_token in the checklist
+    tmp_list.append(checklist[b_index])
 
-    # If the retrieved token is None (No token could be found) try it again with an empty tmp_list
-    if token is None:
-        tmp_list.clear()
+    # Get all possible longer tokens
+    long_tokens: List[tokens] = list(filter(
+        lambda poss_token: poss_token.value.count(" ") == len(tmp_list) - 1, tokens
+    ))
+    # Get the strings of all the tokens for easier comparing
+    long_tokens_str: List[List[str]] = list(map(
+        lambda long_token: long_token.value.split(" "), long_tokens
+    ))
+    # Get the string of the check tmp_list
+    token_str: List[str] = list(map(
+        lambda a_token: a_token.content, tmp_list
+    ))
+    # Try to find a token in the possible longer tokens, otherwise return None
+    possible_token: Union[None, Tuple[str, tokens]] = next(filter(
+        lambda long_token: token_str == long_token[0], zip(long_tokens_str, long_tokens)
+    ), None)
+
+    # If the retrieved token is None try again with the next found_token
+    if possible_token is None:
         return fixVariableTokens(checklist, b_index + 1, tmp_list)
 
-    # Try to find the possible token in the tmp_list, if it goes out of bounds it will generate an IndexError,
-    # That means that the token might be longer so we don't reset it
-    try:
-        if not any(map(lambda enum_sub: tmp_list[enum_sub[0]].content != enum_sub[1],
-                       enumerate(token.value.split(" ")))):
-            # Calculate the begin row of the first word
-            index = b_index - len(tmp_list) + 1
-
-            # Insert a found_token object with the correct values
-            checklist.insert(
-                index,
-                found_token(
-                    token,
-                    tmp_list[0].row,
-                    " ".join(map(lambda type_token: type_token.content, checklist[index: b_index + 1]))
-                )
-            )
-
-            # Remove the slice from the original checklist
-            del checklist[index + 1:b_index + 2]
-            tmp_list.clear()
-
-            # Go further with function with b_index at end of newly generated token
-            return fixVariableTokens(checklist, b_index - (b_index - index - 1), tmp_list)
-
-    # Catch of the IndexError exception
-    except IndexError:
-        pass
+    # Insert newly found token into the list
+    checklist.insert(
+        b_index + 1,
+        found_token(
+            possible_token[1],
+            checklist[b_index].row,
+            " ".join(token_str)
+        )
+    )
+    # Remove the old VARIABLE tokens so only the newly inserted token will be left
+    del checklist[b_index - (len(tmp_list) - 1): b_index + 1]
 
     # Go back with the recursive function
     return fixVariableTokens(checklist, b_index + 1, tmp_list)
 
 
-def getTokens(row_words: list[str], index: int):
+def getTokens(row_words: List[str], index: int) -> List[found_token]:
+    """
+    Generate from a row of strings found_token objects with the
+    :param row_words:
+    :param index:
+    :return:
+    """
     if not row_words:
         return []
 
@@ -117,7 +115,7 @@ def getTokens(row_words: list[str], index: int):
         return [found_token(new_token, index, current_word)] + getTokens(row_words[1:], index)
 
 
-def removeSpaces(row_words: list[str]):
+def removeSpaces(row_words: List[str]) -> Union[None, List[str]]:
     """
     Find the first string which is not space
     :param row_words: Row of words which needs to be filtered
@@ -130,7 +128,7 @@ def removeSpaces(row_words: list[str]):
     return row_words
 
 
-def lexer(file_content: str):
+def lexer(file_content: str) -> List[List[found_token]]:
     """
     Run the lexer on the given content of a file.
     :param file_content: Content of the file which needs lexing
@@ -145,15 +143,8 @@ def lexer(file_content: str):
         lambda word: word is not None,
         map(lambda line: removeSpaces(line), words))
     )
-    found_tokens = list(map(lambda row: getTokens(row[1], row[0] + 1), enumerate(fixed_words)))
+    remove_comments = list(filter(lambda row: row[0] != tokens.COMMENT.value, fixed_words))
+    found_tokens = list(map(lambda row: getTokens(row[1], row[0] + 1), enumerate(remove_comments)))
     fixed_tokens = list(map(lambda row_token: fixVariableTokens(row_token), found_tokens))
     return fixed_tokens
-
-
-if __name__ == '__main__':
-    with open('test.qry', 'r') as f:
-        lextokens = lexer(f.read())
-    print("Lexed tokens", *lextokens, sep='\n')
-
-
 

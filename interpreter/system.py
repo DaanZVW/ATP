@@ -6,7 +6,8 @@ from typing import List, Union, Any, Dict
 class system:
     memory_size: InitVar[int]
 
-    pointer: int = field(default=0, init=False)
+    memory_pointer: int = field(default=0, init=False)
+    instruction_pointer: int = field(default=0, init=False)
     memory: List[int] = field(default_factory=list, init=False)
     functions: Dict[str, Any] = field(default_factory=dict, init=False, repr=False)
     registered_functions: List[str] = field(default_factory=list, init=False)
@@ -19,7 +20,7 @@ class system:
             return next(filter(lambda list_index: self.check_range(list_index, node), index), False)
 
         if index > len(self.memory) - 1 or index < 0:
-            raise RuntimeError(f"Tried accessing outside memory at row {node.row}")
+            raise RuntimeError(f"Tried accessing outside memory ({index} > {len(self.memory)}) at row {node.row}")
 
         return False
 

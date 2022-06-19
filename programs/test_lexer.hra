@@ -2,8 +2,9 @@ plus pointer 3
 min pointer 2
 move pointer to 5
 show pointer
-begin function test
-close
+make function test
+    run function test
+close function
 
 greater compare between 1 3
 less compare between 1 3
@@ -12,3 +13,5 @@ equal compare between 1 3
 increment pointer by 3
 decrement pointer by 3
 multiply pointer by 3
+
+exit

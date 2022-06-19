@@ -1,11 +1,13 @@
 make function increase
     increment pointer by 3
-close
+close function
 
 make function multiply
     multiply pointer by 3
-close
+close function
 
 run function increase
 run function multiply
 run function multiply
+
+exit
