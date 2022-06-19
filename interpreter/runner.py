@@ -1,15 +1,20 @@
-from .nodes import BaseNode, FunctionNode, CallNode, ExitNode, CloseNode
-from .system import system
-from typing import List, Iterable
+# Libraries
+from typing import List, Tuple
 from copy import deepcopy
 
+# HRA files
+from .nodes import BaseNode, FunctionNode, CallNode, ExitNode, CloseNode
+from .decorator import run_generator
+from .system import system
 
-def makeAST(nodes: List[BaseNode], sys: system):
+
+# makeAST :: List[BaseNode] -> system -> Tuple[List[BaseNode], system]
+def makeAST(nodes: List[BaseNode], sys: system) -> Tuple[List[BaseNode], system]:
     """
-
-    :param nodes:
-    :param sys:
-    :return:
+    Configure the sys with given nodes so the runner has everything that it needs
+    :param nodes: List of nodes
+    :param sys: System which needs updating
+    :return: nodes and the updated system
     """
     # Filter all functions from nodes
     functions = list(filter(lambda node: isinstance(node, FunctionNode), nodes))
@@ -23,15 +28,19 @@ def makeAST(nodes: List[BaseNode], sys: system):
     # Set the instruction pointer to the first non function node
     sys.instruction_pointer = next(filter(lambda node: isinstance(node, CloseNode),
                                           nodes[sys.functions[sys.registered_functions[-1]].row:])).row
-    return nodes
+    return nodes, sys
 
 
-def runner(AST_tree: List[BaseNode], sys: system) -> Iterable[system]:
+# runner :: List[BaseNode] -> system -> List[system]
+@run_generator
+def runner(AST_tree: List[BaseNode], sys: system) -> List[system]:
     """
-
-    :param AST_tree:
-    :param sys:
-    :return:
+    Run the AST_Tree alongside the virtual system. This function itself is a generator function because
+    we can return the virtual system (state) every execution of a node. The decorator @run_generator will
+    run the generator and return the list of all states before it has received the ExitNode.
+    :param AST_tree: Nodes to execute
+    :param sys: Virtual system
+    :return: List of all the states
     """
     # Try to get the instruction, if outside list raise a runtime error
     try:
@@ -42,13 +51,10 @@ def runner(AST_tree: List[BaseNode], sys: system) -> Iterable[system]:
 
     # Check if instance is
     if isinstance(execution_node, ExitNode):
-        return sys
+        return deepcopy(sys)
 
-    elif isinstance(execution_node, CallNode):
-        yield execution_node.perform(sys)
     else:
-        execution_node.perform(sys)
-        yield deepcopy(sys)
+        yield deepcopy(execution_node.perform(sys))
 
     sys.instruction_pointer += 1
     yield from runner(AST_tree, sys)

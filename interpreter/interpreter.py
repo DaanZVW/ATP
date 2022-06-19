@@ -1,42 +1,31 @@
-from dataclasses import dataclass, InitVar, field
+# Libraries
 from typing import List
 import os
 
+# HRA files
 from .lexer import lexer
 from .parser import parser
 from .system import system
 from .runner import runner, makeAST
 
 
-@dataclass
-class interpreter:
-    filename: str
-    memory_size: InitVar[int]
-    generator: runner = field(init=False)
+# interpreter :: str -> int -> List[int] -> List[system]
+def interpreter(filename: str, memory_size: int, memory_input: List[int]) -> List[system]:
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(f"Filename {filename} does not exist")
 
-    def __post_init__(self, memory_size: int):
-        if not os.path.isfile(self.filename):
-            raise FileNotFoundError(f"Filename {self.filename} does not exist")
+    with open(filename, 'r') as file:
+        file_content = file.read()
 
-        with open(self.filename, 'r') as file:
-            file_content = file.read()
-
-        tokens = lexer(file_content)
-        nodes = parser(tokens)
-        sys = system(memory_size)
-        AST_Tree = makeAST(nodes, sys)
-        self.generator = runner(AST_Tree, sys)
-
-    def getFinalState(self) -> system:
-        *_, final_state = iter(self.generator)
-        return final_state
-
-    def getAllStates(self) -> List[system]:
-        states = list(self.generator)
-        if not states:
-            raise RuntimeError("An unknown error has occurred! Most likely because of a infinite loop")
-        return states
-
-
+    # Get the tokens
+    tokens = lexer(file_content)
+    # Convert tokens to nodes
+    nodes = parser(tokens)
+    # Make virtual system
+    sys = system(memory_size, memory_input)
+    # Make AST_Tree
+    AST_Tree, sys = makeAST(nodes, sys)
+    # Get the states while running
+    return runner(AST_Tree, sys)
 
 

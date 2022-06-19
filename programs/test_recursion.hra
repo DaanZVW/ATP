@@ -1,8 +1,7 @@
 make function recursion
-    ~ Increment the
     increment memory pointer by 1
     greater compare between 0 1
-    plus instruction pointer by 6
+    exit
     run function recursion
 close function
 
@@ -10,5 +9,3 @@ move memory pointer to 1
 increment memory pointer by 20
 move memory pointer to 0
 run function recursion
-
-exit

@@ -1,5 +1,4 @@
-from typing import List
-
+# HRA Files
 from .nodes import *
 from .lexer import tokens, found_token
 
@@ -11,6 +10,7 @@ tokenNodeLinker = {
     tokens.LEFT_INS:  LeftInstructionNode,
     tokens.MOVE_MEM:  MoveMemoryNode,
     tokens.MOVE_INS:  MoveInstructionNode,
+    tokens.MOVE_VAL:  MoveMemoryValueNode,
     tokens.PRINT:     PrintNode,
     tokens.FUNCTION:  FunctionNode,
     tokens.CLOSE:     CloseNode,
@@ -19,13 +19,21 @@ tokenNodeLinker = {
     tokens.GREATER:   GreaterNode,
     tokens.LESS:      LessNode,
     tokens.EQUAL:     EqualNode,
+    tokens.UNEQUAL:   UnequalNode,
+    tokens.SET:       SetNode,
     tokens.INCREMENT: IncrementNode,
     tokens.DECREMENT: DecrementNode,
     tokens.MULTIPLY:  MultiplyNode
 }
 
 
+# parseTokens :: List[List[found_token]] -> List[BaseNode]
 def parseTokens(found_tokens: List[List[found_token]]) -> List[BaseNode]:
+    """
+    Parse the tokens and convert them to nodes with the tokenNodeLinker dict
+    :param found_tokens: Found tokens by the lexer
+    :return: List with nodes
+    """
     # Return empty list when end of list has been reached
     if len(found_tokens) <= 0:
         return []
@@ -41,7 +49,15 @@ def parseTokens(found_tokens: List[List[found_token]]) -> List[BaseNode]:
     return [tokenNodeLinker[first.token](row=first.row, params=other_tokens)] + parseTokens(rest)
 
 
+# parseNodes :: List[BaseNode] -> int -> List[str] -> List[BaseNode]
 def parseNodes(nodes: List[BaseNode], index: int = 0, function_names: List[str] = None) -> List[BaseNode]:
+    """
+    Check if the correct syntax has been used
+    :param nodes: Nodes of the program
+    :param index: Index of the node which is being parsed
+    :param function_names: List for function names to stop same function names
+    :return: parsed nodes
+    """
     if function_names is None:
         function_names = []
 
@@ -69,7 +85,13 @@ def parseNodes(nodes: List[BaseNode], index: int = 0, function_names: List[str] 
     return [node] + parseNodes(nodes, index+1, function_names)
 
 
+# parser :: List[List[found_token]] -> List[BaseNode]
 def parser(found_tokens: List[List[found_token]]) -> List[BaseNode]:
+    """
+    Main function with check if there is an exit in file
+    :param found_tokens: All found tokens from the lexer
+    :return: Parsed nodes
+    """
     nodes = parseTokens(found_tokens)
     if not next(filter(lambda node: isinstance(node, ExitNode), nodes), False):
         raise SyntaxError("No 'exit' found in file")

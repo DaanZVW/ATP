@@ -1,0 +1,15 @@
+make function sommig
+    not equal compare between 1 2
+    plus instruction pointer by 2
+    exit
+
+    increment memory pointer by 1
+    plus memory pointer by 1
+    decrement memory pointer by 1
+    min memory pointer by 1
+    run function sommig
+close function
+
+move memory to 1
+set memory pointer to 0
+run function sommig

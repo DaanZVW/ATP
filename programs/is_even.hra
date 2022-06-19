@@ -1,0 +1,27 @@
+make function even
+    equal compare between 0 1
+    run function is_even
+    decrement memory pointer by 1
+    run function odd
+close function
+
+make function odd
+    equal compare between 0 1
+    run function is_odd
+    decrement memory pointer by 1
+    run function even
+close function
+
+make function is_even
+    set memory pointer to 1
+    exit
+close function
+
+make function is_odd
+    exit
+close function
+
+move memory pointer to 2
+increment memory pointer by 1
+move memory pointer to 0
+run function even

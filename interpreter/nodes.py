@@ -1,9 +1,11 @@
+# Libraries
 from dataclasses import dataclass, field
 from typing import List, Tuple
 from abc import ABC
 
+# HRA Files
 from .lexer import found_token
-from .system import system
+from .system import system, check_range
 
 
 @dataclass
@@ -28,10 +30,18 @@ class BaseNode(ABC):
         except AttributeError:
             pass
 
-    def configure(self):
+    def configure(self) -> None:
+        """
+        Abstract function for configuring a node with its given parameters
+        """
         pass
 
     def perform(self, sys: system):
+        """
+        Function that performs the node with the virtual system
+        :param sys: Virtual system
+        :return: Virtual system
+        """
         return sys
 
 
@@ -43,7 +53,7 @@ class PointerAdderBaseNode(BaseNode):
     # Node vars
     move_amount: int = field(init=False)
 
-    def configure(self):
+    def configure(self) -> None:
         if len(self.params) > 0:
             amount = int(self.params[0].content)
             if amount < 1:
@@ -61,7 +71,7 @@ class PointerSetterBaseNode(BaseNode):
     # Node vars
     pointer_pos: int = field(init=False)
 
-    def configure(self):
+    def configure(self) -> None:
         self.pointer_pos = int(self.params[0].content)
 
 
@@ -72,7 +82,7 @@ class RightMemoryNode(PointerAdderBaseNode):
 
     def perform(self, sys: system):
         new_pointer = sys.memory_pointer + self.move_amount
-        sys.check_range(new_pointer, self)
+        check_range(new_pointer, sys, self)
         sys.memory_pointer = new_pointer
         return sys
 
@@ -84,7 +94,7 @@ class LeftMemoryNode(PointerAdderBaseNode):
 
     def perform(self, sys: system):
         new_pointer = sys.memory_pointer - self.move_amount
-        sys.check_range(new_pointer, self)
+        check_range(new_pointer, sys, self)
         sys.memory_pointer = new_pointer
         return sys
 
@@ -94,10 +104,20 @@ class MoveMemoryNode(PointerSetterBaseNode):
     # Base vars
     name = 'MoveMemoryNode'
 
-    def perform(self, sys: system):
+    def perform(self, sys: system) -> system:
         new_pointer = self.pointer_pos
-        sys.check_range(new_pointer, self)
+        check_range(new_pointer, sys, self)
         sys.memory_pointer = new_pointer
+        return sys
+
+
+@dataclass
+class MoveMemoryValueNode(PointerSetterBaseNode):
+    # Base vars
+    name = 'MoveMemoryValueNode'
+
+    def perform(self, sys: system) -> system:
+        sys.memory[self.pointer_pos] = sys.memory[sys.memory_pointer]
         return sys
 
 
@@ -106,8 +126,8 @@ class RightInstructionNode(PointerAdderBaseNode):
     # Base vars
     name = 'RightInstructionNode'
 
-    def perform(self, sys: system):
-        sys.instruction_pointer += self.move_amount
+    def perform(self, sys: system) -> system:
+        sys.instruction_pointer += (self.move_amount - 1)
         return sys
 
 
@@ -116,8 +136,8 @@ class LeftInstructionNode(PointerAdderBaseNode):
     # Base vars
     name = 'LeftInstructionNode'
 
-    def perform(self, sys: system):
-        sys.instruction_pointer -= self.move_amount
+    def perform(self, sys: system) -> system:
+        sys.instruction_pointer -= (self.move_amount + 1)
         return sys
 
 
@@ -126,8 +146,8 @@ class MoveInstructionNode(PointerSetterBaseNode):
     # Base vars
     name = 'MoveInstructionNode'
 
-    def perform(self, sys: system):
-        sys.instruction_pointer = self.pointer_pos
+    def perform(self, sys: system) -> system:
+        sys.instruction_pointer = (self.pointer_pos - 1)
         return sys
 
 
@@ -137,7 +157,7 @@ class PrintNode(BaseNode):
     name = 'PrintNode'
     amount_params = None
 
-    def perform(self, sys: system):
+    def perform(self, sys: system) -> system:
         print(sys.memory[sys.memory_pointer])
         return sys
 
@@ -152,10 +172,10 @@ class FunctionNode(BaseNode):
     func_name: str = field(init=False)
     instruction_index: int = field(init=False, default=0)
 
-    def configure(self):
+    def configure(self) -> None:
         self.func_name = self.params[0].content
 
-    def perform(self, sys: system):
+    def perform(self, sys: system) -> system:
         sys.instruction_pointer = self.instruction_index
         return sys
 
@@ -176,14 +196,13 @@ class CallNode(BaseNode):
     # Node vars
     func_name: str = field(init=False)
 
-    def configure(self):
+    def configure(self) -> None:
         self.func_name = self.params[0].content
 
-    def perform(self, sys: system):
+    def perform(self, sys: system) -> system:
         if self.func_name not in sys.functions:
             raise RuntimeError(f"Function '{self.func_name}' not found")
-        sys.functions[self.func_name].perform(sys)
-        return sys
+        return sys.functions[self.func_name].perform(sys)
 
 
 @dataclass
@@ -196,12 +215,12 @@ class CompareBaseNode(BaseNode):
     rhs: int = field(init=False)
 
     # Base functions
-    def configure(self):
+    def configure(self) -> None:
         lhs, rhs = self.params
         self.lhs, self.rhs = int(lhs.content), int(rhs.content)
 
-    def perform(self, sys: system):
-        sys.check_range([self.lhs, self.rhs], self)
+    def perform(self, sys: system) -> system:
+        check_range([self.lhs, self.rhs], sys, self)
 
         if self.compare(sys.memory[self.lhs], sys.memory[self.rhs]):
             new_pointer = sys.instruction_pointer
@@ -212,7 +231,7 @@ class CompareBaseNode(BaseNode):
         return sys
 
     # Compare function
-    def compare(self, lhs, rhs):
+    def compare(self, lhs, rhs) -> None:
         raise RuntimeError("No compare function has been configured")
 
 
@@ -222,7 +241,7 @@ class GreaterNode(CompareBaseNode):
     name = 'GreaterNode'
 
     # Compare function
-    def compare(self, lhs, rhs):
+    def compare(self, lhs, rhs) -> bool:
         return lhs > rhs
 
 
@@ -232,7 +251,7 @@ class LessNode(CompareBaseNode):
     name = 'LessNode'
 
     # Compare function
-    def compare(self, lhs, rhs):
+    def compare(self, lhs, rhs) -> bool:
         return lhs < rhs
 
 
@@ -242,8 +261,18 @@ class EqualNode(CompareBaseNode):
     name = 'EqualNode'
 
     # Compare function
-    def compare(self, lhs, rhs):
+    def compare(self, lhs, rhs) -> bool:
         return lhs == rhs
+
+
+@dataclass
+class UnequalNode(CompareBaseNode):
+    # Base vars
+    name = 'UnequalNode'
+
+    # Compare function
+    def compare(self, lhs, rhs) -> bool:
+        return lhs != rhs
 
 
 @dataclass
@@ -251,12 +280,24 @@ class SetBaseNode(BaseNode):
     # Node var
     change_value: int = field(init=False)
 
-    def perform(self, sys: system):
+    def perform(self, sys: system) -> system:
         sys.memory[sys.memory_pointer] = self.getValue(sys.memory[sys.memory_pointer])
         return sys
 
-    def getValue(self, mem_value: int):
+    def getValue(self, mem_value: int) -> int:
         raise RuntimeError(f"Node '{self.name}' has no implementation of 'getValue()'")
+
+
+@dataclass
+class SetNode(SetBaseNode):
+    name = 'SetNode'
+    amount_params = (1,)
+
+    def configure(self) -> None:
+        self.change_value = int(self.params[0].content)
+
+    def getValue(self, mem_value: int) -> int:
+        return self.change_value
 
 
 @dataclass
@@ -264,13 +305,13 @@ class IncrementNode(SetBaseNode):
     name = 'IncrementNode'
     amount_params = (1,)
 
-    def configure(self):
+    def configure(self) -> None:
         amount = int(self.params[0].content)
         if amount < 1:
             raise SyntaxError(f"Increment amount ({amount}) is below 1")
         self.change_value = amount
 
-    def getValue(self, mem_value: int):
+    def getValue(self, mem_value: int) -> int:
         return mem_value + self.change_value
 
 
@@ -280,13 +321,13 @@ class DecrementNode(SetBaseNode):
     name = 'DecrementNode'
     amount_params = (1,)
 
-    def configure(self):
+    def configure(self) -> None:
         amount = int(self.params[0].content)
         if amount < 1:
             raise SyntaxError(f"Decrement amount ({amount}) is below 1")
         self.change_value = amount
 
-    def getValue(self, mem_value: int):
+    def getValue(self, mem_value: int) -> int:
         return mem_value - self.change_value
 
 
@@ -296,13 +337,13 @@ class MultiplyNode(SetBaseNode):
     name = 'MultiplyNode'
     amount_params = (1,)
 
-    def configure(self):
+    def configure(self) -> None:
         amount = int(self.params[0].content)
         if amount < 1:
             raise SyntaxError(f"Decrement amount ({amount}) is below 1")
         self.change_value = amount
 
-    def getValue(self, mem_value: int):
+    def getValue(self, mem_value: int) -> int:
         return mem_value * self.change_value
 
 
@@ -310,5 +351,3 @@ class MultiplyNode(SetBaseNode):
 class ExitNode(BaseNode):
     name = 'ExitNode'
     amount_params = None
-
-

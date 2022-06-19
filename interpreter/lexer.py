@@ -1,3 +1,4 @@
+# Libraries
 import time
 from enum import Enum
 from typing import List, Union, Tuple
@@ -11,6 +12,7 @@ class tokens(Enum):
     LEFT_INS = 'min instruction pointer by'
     MOVE_MEM = 'move memory pointer to'
     MOVE_INS = 'move instruction pointer to'
+    MOVE_VAL = 'move memory to'
     PRINT = 'show memory'
     FUNCTION = 'make function'
     CLOSE = 'close function'
@@ -22,8 +24,10 @@ class tokens(Enum):
     GREATER = 'greater compare between'
     LESS = 'less compare between'
     EQUAL = 'equal compare between'
+    UNEQUAL = 'not equal compare between'
 
     # Variable manipulation
+    SET = 'set memory pointer to'
     INCREMENT = 'increment memory pointer by'
     DECREMENT = 'decrement memory pointer by'
     MULTIPLY = 'multiply memory pointer by'
@@ -40,6 +44,7 @@ class found_token:
     content: str = field(default='')
 
 
+# fixVariableTokens :: List[found_token] -> Int -> List[found_token]
 def fixVariableTokens(checklist: List[found_token], b_index: int = 0, tmp_list=None) -> List[found_token]:
     """
     Function that reinterprets the row and checks if possible longer tokens has been missed
@@ -97,6 +102,7 @@ def fixVariableTokens(checklist: List[found_token], b_index: int = 0, tmp_list=N
     return fixVariableTokens(checklist, b_index + 1, tmp_list)
 
 
+# getTokens :: List[str] -> Int -> List[found_token]
 def getTokens(row_words: List[str], index: int) -> List[found_token]:
     """
     Generate from a row of strings found_token objects with the
@@ -115,6 +121,7 @@ def getTokens(row_words: List[str], index: int) -> List[found_token]:
         return [found_token(new_token, index, current_word)] + getTokens(row_words[1:], index)
 
 
+# removeSpaces :: List[str] -> Union[None, List[str]]
 def removeSpaces(row_words: List[str]) -> Union[None, List[str]]:
     """
     Find the first string which is not space
@@ -128,6 +135,7 @@ def removeSpaces(row_words: List[str]) -> Union[None, List[str]]:
     return row_words
 
 
+# lexer :: str -> List[List[found_token]]
 def lexer(file_content: str) -> List[List[found_token]]:
     """
     Run the lexer on the given content of a file.

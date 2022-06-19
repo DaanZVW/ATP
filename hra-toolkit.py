@@ -1,6 +1,9 @@
+# Libraries
 import argparse
 
+# HRA Files
 from interpreter import interpreter
+
 
 if __name__ == '__main__':
     cli_parser = argparse.ArgumentParser(description='CLI for the HRA toolkit')
@@ -11,29 +14,34 @@ if __name__ == '__main__':
                           metavar='SIZE', help='Allocate the size of the memory')
 
     select = cli_parser.add_mutually_exclusive_group(required=True)
-    select.add_argument('-i', '--interpreter', action='store_true',
+    select.add_argument('-it', '--interpreter', action='store_true',
                         help='Run the interpreter on given file')
-    select.add_argument('-c', '--compiler', action='store_true',
-                        help='Run the compiler on given file')
+    # select.add_argument('-c', '--compiler', action='store_true',
+    #                     help='Run the compiler on given file')
 
     optional = cli_parser.add_argument_group('optional arguments')
-    optional.add_argument('-s', '--state', type=str, choices=['final', 'all'], default='final',
+    optional.add_argument('-s', '--state', type=str, choices=['final', 'all', 'none'], default='none',
                           help='Print the type of state of the virtual system')
-    optional.add_argument('-o', '--output', type=str,
-                          help='Destination file of the assembly')
+    # optional.add_argument('-o', '--output', type=str,
+    #                       help='Destination file of the assembly')
+    optional.add_argument('-i', '--input', type=int, default=[], nargs='+',
+                          help='Input for running the file, order of inputs is the same as in memory')
 
     # Execute the parse_args() method
     args = vars(cli_parser.parse_args())
 
     # Get interpreter
-    inter = interpreter(filename=args.get('file'), memory_size=args.get('memsize'))
+    states = interpreter(filename=args.get('file'), memory_size=args.get('memsize'), memory_input=args.get('input'))
 
     # Print state
-    try:
-        if args.get('state') != 'final':
-            print(*inter.getAllStates(), sep='\n')
-        else:
-            print(inter.getFinalState())
-    except RecursionError:
-        raise RecursionError(f"File {args.get('file')} has exceeded the maximum recursion depth")
+    if args.get('state') == 'all':
+        print(*states, sep='\n')
+        print(f'Output: {states[-1].memory[0]}')
+    else:
+        *_, final_state = states
+        if args.get('state') == 'final':
+            print(final_state)
+        print(f'Output: {final_state.memory[0]}')
+
+
 
