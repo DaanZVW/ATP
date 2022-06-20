@@ -7,6 +7,10 @@ There are a couple of difference between actual assembly and HRA though:
 * The instruction-set more resembles the esolang [brainfuck](https://esolangs.org/wiki/Brainfuck)
 * HRA supports functions instead of loops which makes it easier to read.
 
+HRA is turing complete because of the following statements:
+* By using conditional instruction jumping it can be used to manipulate the behaviour of the code to the desire of the writer
+* It's essentially brainfuck with added features and brainfuck is Turing complete.
+
 ## Instruction-set 
 | Instruction                 | Parameters        | Action                                                                                                                    |
 |:----------------------------|-------------------|:--------------------------------------------------------------------------------------------------------------------------|

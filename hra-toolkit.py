@@ -36,12 +36,12 @@ if __name__ == '__main__':
     # Print state
     if args.get('state') == 'all':
         print(*states, sep='\n')
-        print(f'Output: {states[-1].memory[0]}')
-    else:
+
+    elif args.get('state') == 'final':
         *_, final_state = states
-        if args.get('state') == 'final':
-            print(final_state)
-        print(f'Output: {final_state.memory[0]}')
+        print(final_state)
+        
+    print(f'Output: {states[-1].memory[0]}')
 
 
 

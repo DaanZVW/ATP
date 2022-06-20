@@ -3,7 +3,7 @@ from typing import List, Tuple
 from copy import deepcopy
 
 # HRA files
-from .nodes import BaseNode, FunctionNode, CallNode, ExitNode, CloseNode
+from .nodes import BaseNode, FunctionNode, ExitNode, CloseNode, perform
 from .decorator import run_generator
 from .system import system
 
@@ -54,7 +54,7 @@ def runner(AST_tree: List[BaseNode], sys: system) -> List[system]:
         return deepcopy(sys)
 
     else:
-        yield deepcopy(execution_node.perform(sys))
+        yield deepcopy(perform(execution_node, sys))
 
     sys.instruction_pointer += 1
     yield from runner(AST_tree, sys)
