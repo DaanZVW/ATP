@@ -1,6 +1,11 @@
+# Library
+from typing import List
+
 # HRA Files
-from .nodes import *
-from .lexer import tokens, found_token
+from .nodes import RightMemoryNode, RightInstructionNode, LeftMemoryNode, LeftInstructionNode, MoveMemoryNode, \
+    MoveInstructionNode, MoveMemoryValueNode, PrintNode, FunctionNode, CloseNode, CallNode, ExitNode, GreaterNode, \
+    LessNode, EqualNode, UnequalNode, SetNode, IncrementNode, DecrementNode, MultiplyNode, BaseNode
+from .lexer import found_token, tokens
 
 
 tokenNodeLinker = {
@@ -23,7 +28,7 @@ tokenNodeLinker = {
     tokens.SET:       SetNode,
     tokens.INCREMENT: IncrementNode,
     tokens.DECREMENT: DecrementNode,
-    tokens.MULTIPLY:  MultiplyNode
+    tokens.MULTIPLY: MultiplyNode
 }
 
 
