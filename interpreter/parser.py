@@ -28,7 +28,7 @@ tokenNodeLinker = {
     tokens.SET:       SetNode,
     tokens.INCREMENT: IncrementNode,
     tokens.DECREMENT: DecrementNode,
-    tokens.MULTIPLY: MultiplyNode
+    tokens.MULTIPLY:  MultiplyNode
 }
 
 

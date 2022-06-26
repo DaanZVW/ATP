@@ -19,15 +19,19 @@ def makeAST(nodes: List[BaseNode], sys: system) -> Tuple[List[BaseNode], system]
     # Filter all functions from nodes
     functions = list(filter(lambda node: isinstance(node, FunctionNode), nodes))
 
-    # Register the functions in the virtual system
-    sys.functions = dict(map(lambda node: (node.func_name, node,), functions))
+    if functions:
+        # Register the functions in the virtual system
+        sys.functions = dict(map(lambda node: (node.func_name, node,), functions))
 
-    # Register only the strings for debugging purposes while printing the system
-    sys.registered_functions = list(sys.functions.keys())
+        # Register only the strings for debugging purposes while printing the system
+        sys.registered_functions = list(sys.functions.keys())
 
-    # Set the instruction pointer to the first non function node
-    sys.instruction_pointer = next(filter(lambda node: isinstance(node, CloseNode),
-                                          nodes[sys.functions[sys.registered_functions[-1]].row:])).row
+        # Set the instruction pointer to the first non function node
+        sys.instruction_pointer = next(filter(lambda node: isinstance(node, CloseNode),
+                                              nodes[sys.functions[sys.registered_functions[-1]].row:])).row
+    else:
+        sys.instruction_pointer = 0
+
     return nodes, sys
 
 

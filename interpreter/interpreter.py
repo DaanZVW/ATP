@@ -1,16 +1,17 @@
 # Libraries
-from typing import List
+from typing import List, Tuple
 import os
 
 # HRA files
 from .lexer import lexer
 from .parser import parser
 from .system import system
-from .runner import runner, makeAST
+from .runner import makeAST
+from .nodes import BaseNode
 
 
-# interpreter :: str -> int -> List[int] -> List[system]
-def interpreter(filename: str, memory_size: int, memory_input: List[int]) -> List[system]:
+# prepare_interpreter :: str -> int -> List[int] -> Tuple[List[BaseNode], system]
+def prepare_interpreter(filename: str, memory_size: int, memory_input: List[int]) -> Tuple[List[BaseNode], system]:
     if not os.path.isfile(filename):
         raise FileNotFoundError(f"Filename {filename} does not exist")
 
@@ -24,8 +25,5 @@ def interpreter(filename: str, memory_size: int, memory_input: List[int]) -> Lis
     # Make virtual system
     sys = system(memory_size, memory_input)
     # Make AST_Tree
-    AST_Tree, sys = makeAST(nodes, sys)
-    # Get the states while running
-    return runner(AST_Tree, sys)
-
+    return makeAST(nodes, sys)
 
