@@ -1,7 +1,6 @@
 # Libraries
 from typing import List, Tuple
 from copy import deepcopy
-from time import sleep
 
 # HRA files
 from .nodes import RightMemoryNode, RightInstructionNode, LeftMemoryNode, LeftInstructionNode, MoveMemoryNode, \

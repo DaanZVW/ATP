@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Dict, Tuple
+from typing import List, Optional, Any, Dict
 
 # Import HRA Nodes
 from interpreter import RightMemoryNode, RightInstructionNode, LeftMemoryNode, LeftInstructionNode, MoveMemoryNode, \
@@ -7,50 +7,74 @@ from interpreter import RightMemoryNode, RightInstructionNode, LeftMemoryNode, L
 from interpreter import system
 
 
-def makeComment(comment: str):
+# makeComment :: str -> str
+def makeComment(comment: str) -> str:
+    """
+    Function for generating comments in assembly
+    :param comment: Comment
+    :return: Comment string for in assembly
+    """
     return f'@ {comment}\n'
 
 
-def makeLabel(label: str):
+# makeLabel :: str -> str
+def makeLabel(label: str) -> str:
+    """
+    Function for generating goto labels in assembly
+    :param label: Label for goto statement
+    :return: Label string for in assembly
+    """
     return f"{label}:\n"
 
 
-def makeIndicator(label: str, *arguments: str):
+# makeIndicator :: str -> Tuple[str] -> str
+def makeIndicator(label: str, *arguments: str) -> str:
+    """
+    Function for generating indicators (.section, .ascii, etc.) in assembly
+    :param label: Indicator label
+    :param arguments: Arguments for the label
+    :return: Indicator string for in assembly
+    """
     return f"{label}".ljust(9) + f"{' '.join(arguments)}\n"
 
 
-def makeString(name: str, value: str):
-    return "".join([
-        makeIndicator('.section', '.data'),
-        f'\t\t{name}: .ascii "{value}"\n\t',
-        makeIndicator('.section', '.text')
-    ])
-
-
-def makeInstruction(instruction: str, *arguments: str):
+# makeInstruction :: str -> Tuple[str] -> str
+def makeInstruction(instruction: str, *arguments: str) -> str:
+    """
+    Function for generating an assembly instruction with arguments
+    :param instruction: Assembly instruction
+    :param arguments: Arguments for instructions
+    :return: Instruction for in assembly
+    """
     return f"\t{instruction.upper()}".ljust(6) + f"{', '.join(arguments)}\n"
 
 
-def getMemoryAdress(index: int, compilerVars: dict):
-    return (index + 1) * compilerVars['alignment']
-
-
+# compileNodes :: List[BaseNode] -> Dict[str, Any] -> int -> bool -> str
 def compileNodes(nodes: List[BaseNode],
                  compilerDefaults: Dict[str, Any],
-                 file_str: Optional[str] = '',
                  node_index: Optional[int] = 0,
-                 verbose: Optional[bool] = True):
+                 verbose: Optional[bool] = True) -> str:
+    """
+    Function for compiling the given nodes with compilerDefaults
+    :param nodes: Nodes to compile
+    :param compilerDefaults: Dictionary with settings for compiler
+    :param node_index: Index of compiled node (internal only)
+    :param verbose: Extra verbose assembly
+    :return: Assembly string with all the compiled nodes
+    """
     if node_index >= len(nodes):
-        return file_str
-
+        return ''
     node = nodes[node_index]
-    # print(node_index, node)
 
     to_add_str = ''
+    # Add extra verbose message inside assembly
     if verbose:
         to_add_str += makeComment(f"node at row {node.row}: {node.name}\n")
+
+    # If main node, add the start_branch identifier
     if compilerDefaults['node_start'] == node.row:
         to_add_str += makeLabel(compilerDefaults['start_branch'])
+
     to_add_str += makeLabel(f'node_{node.row}')
 
     # Memory manipulations
@@ -77,7 +101,7 @@ def compileNodes(nodes: List[BaseNode],
         )
 
     elif isinstance(node, MoveMemoryValueNode):
-        move_adres = getMemoryAdress(node.pointer_pos, compilerDefaults)
+        move_adres = (node.pointer_pos + 1) * compilerDefaults['alignment']
         to_add_str += makeInstruction('ldr', 'r0', f'[{compilerDefaults["mempointer"]}]')
         to_add_str += makeInstruction('str', 'r0', f'[fp, #-{move_adres}]')
 
@@ -154,11 +178,18 @@ def compileNodes(nodes: List[BaseNode],
         to_add_str += makeInstruction(branch_condition, f'node_{node.row + 1}')
         to_add_str += makeInstruction('b', f'node_{node.row + 2}')
 
-    file_str += to_add_str
-    return compileNodes(nodes, compilerDefaults, file_str, node_index + 1, verbose)
+    return to_add_str + compileNodes(nodes, compilerDefaults, node_index + 1, verbose)
 
 
-def memoryFiller(input_mem: List[int], alignment: int, index: int = None):
+# memoryFiller :: List[int] -> int -> int -> str
+def memoryFiller(input_mem: List[int], alignment: int, index: int = None) -> str:
+    """
+    Function for generating the filling of storage when given the argument -i [values]
+    :param input_mem: All the integer inputs
+    :param alignment: Alignment in assembly file
+    :param index: Index of the input
+    :return: Assembly string with an input generator
+    """
     if not input_mem:
         return ''
     if index is None:
@@ -171,7 +202,17 @@ def memoryFiller(input_mem: List[int], alignment: int, index: int = None):
     return to_add_str + memoryFiller(rest, alignment, index + 1)
 
 
-def compiler(nodes: List[BaseNode], sys: system, link_name: str, input_mem: List[int]):
+# compiler :: List[BaseNode] -> system -> str -> List[int] -> Dict[str, Any] -> str
+def compiler(nodes: List[BaseNode], sys: system, link_name: str, input_mem: List[int], **kwargs) -> str:
+    """
+    Main compiler function
+    :param nodes: Nodes in the HRA file
+    :param sys: Prepared system which has variables that the compiler uses
+    :param link_name: Main function name
+    :param input_mem: All inputs given from the user
+    :param kwargs: Kwargs for the internal compileNodes function
+    :return: Assembly string of the file
+    """
     compilerDefaults = {
         # Label names
         'exit_branch': '_exit',
@@ -236,6 +277,6 @@ def compiler(nodes: List[BaseNode], sys: system, link_name: str, input_mem: List
         makeInstruction('swi', '0')
     ])
 
-    inside = compileNodes(nodes, compilerDefaults, verbose=False)
+    inside = compileNodes(nodes, compilerDefaults, **kwargs)
 
     return init + start + exit_func + '\n' + print_func + '\n' + inside
