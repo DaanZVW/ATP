@@ -1,11 +1,12 @@
 make function recursion
+    show memory
     increment memory pointer by 1
-    greater compare between 0 1
-    exit
+    less compare between 0 1
     run function recursion
 close function
 
 move memory pointer to 1
-increment memory pointer by 20
+increment memory pointer by 100
 move memory pointer to 0
 run function recursion
+exit

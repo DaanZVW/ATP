@@ -29,6 +29,7 @@ def makeAST(nodes: List[BaseNode], sys: system) -> Tuple[List[BaseNode], system]
         # Set the instruction pointer to the first non function node
         sys.instruction_pointer = next(filter(lambda node: isinstance(node, CloseNode),
                                               nodes[sys.functions[sys.registered_functions[-1]].row:])).row
+        sys.instruction_pointer += 1
     else:
         sys.instruction_pointer = 0
 

@@ -14,7 +14,7 @@ class BaseNode(ABC):
     amount_params: Tuple[int] = field(default=None, init=False)
 
     row: int = field()
-    params: List[found_token] = field()
+    params: List[found_token] = field(repr=False)
 
     def __post_init__(self):
         """

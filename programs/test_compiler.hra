@@ -1,2 +1,19 @@
+plus memory pointer by 5
+min memory pointer by 2
+move memory pointer to 1
+move memory to 4
+plus instruction pointer by 2
+min instruction pointer by 3
+move instruction pointer to 2
+make function test_function
+close function
+run function test_function
+greater compare between 1 2
+less compare between 3 4
+equal compare between 5 6
+not equal compare between 7 8
 set memory pointer to 5
+increment memory pointer by 4
+decrement memory pointer by 2
+multiply memory pointer by 5
 exit
