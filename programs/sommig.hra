@@ -1,8 +1,8 @@
 make function sommig
     not equal compare between 1 2
     plus instruction pointer by 2
-    exit
-
+    move instruction pointer to 14
+    
     increment memory pointer by 1
     plus memory pointer by 1
     decrement memory pointer by 1
@@ -13,3 +13,5 @@ close function
 move memory to 1
 set memory pointer to 0
 run function sommig
+show memory
+exit

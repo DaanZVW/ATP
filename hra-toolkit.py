@@ -2,7 +2,6 @@
 import os
 import argparse
 import subprocess
-from textwrap import wrap
 
 # HRA Files
 from interpreter import prepare_interpreter, runner
@@ -56,7 +55,7 @@ if __name__ == '__main__':
                 *_, final_state = states
                 print(final_state)
 
-            print(f'Output: {states[-1].memory[0]}')
+            print(f'\nExited with code: 1')
 
         if args.get('compiler'):
             if args.get('output') is None:
@@ -65,7 +64,7 @@ if __name__ == '__main__':
             else:
                 output_filename = args.get('output')
 
-            compiled_file = compiler(nodes, prepared_system, os.path.split(output_filename)[-1])
+            compiled_file = compiler(nodes, prepared_system, os.path.split(output_filename)[-1], args.get('input'))
             output_filename += '.asm'
 
             with open(output_filename, 'w') as file:

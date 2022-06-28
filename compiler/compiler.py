@@ -79,7 +79,7 @@ def compileNodes(nodes: List[BaseNode],
     elif isinstance(node, MoveMemoryValueNode):
         move_adres = getMemoryAdress(node.pointer_pos, compilerDefaults)
         to_add_str += makeInstruction('ldr', 'r0', f'[{compilerDefaults["mempointer"]}]')
-        to_add_str += makeInstruction('str', 'r0', f'[fp, #{move_adres}]')
+        to_add_str += makeInstruction('str', 'r0', f'[fp, #-{move_adres}]')
 
     elif isinstance(node, SetNode):
         to_add_str += makeInstruction('mov', 'r0', f'#{node.change_value}')
@@ -107,7 +107,7 @@ def compileNodes(nodes: List[BaseNode],
         else:
             branch_index = node.pointer_pos
 
-        if branch_index < 0 or len(nodes) - 1 < branch_index:
+        if branch_index < 0 or len(nodes) < branch_index:
             raise SyntaxError(f'At row {node.row}: Goto statement to node {branch_index} does not exist, '
                               f'max available {len(nodes)}')
 
@@ -118,10 +118,8 @@ def compileNodes(nodes: List[BaseNode],
         to_add_str += makeComment(f'Start of function {node.func_name}')
         to_add_str += '\n\n'
         to_add_str += makeLabel(f'function_{node.func_name}')
-        to_add_str += makeInstruction('push', '{lr}')
 
     elif isinstance(node, CloseNode):
-        to_add_str += makeInstruction('pop', '{pc}')
         to_add_str += makeComment('End of function')
         to_add_str += '\n\n'
 
@@ -160,15 +158,26 @@ def compileNodes(nodes: List[BaseNode],
     return compileNodes(nodes, compilerDefaults, file_str, node_index + 1, verbose)
 
 
-def compiler(nodes: List[BaseNode], sys: system, link_name: str):
-    memory_size = len(sys.memory)
+def memoryFiller(input_mem: List[int], alignment: int, index: int = None):
+    if not input_mem:
+        return ''
+    if index is None:
+        index = 1
 
+    value, *rest = input_mem
+    to_add_str = makeInstruction('mov', 'r0', f'#{value}')
+    to_add_str += makeInstruction('str', 'r0', f'[fp, #-{index * alignment}]')
+
+    return to_add_str + memoryFiller(rest, alignment, index + 1)
+
+
+def compiler(nodes: List[BaseNode], sys: system, link_name: str, input_mem: List[int]):
     compilerDefaults = {
         # Label names
         'exit_branch': '_exit',
         'print_branch': 'show_memory',
         'start_branch': link_name,
-        'node_start': sys.instruction_pointer,
+        'node_start': sys.instruction_pointer + 1,
 
         # Register definitions
         'stack_top': 'sp',
@@ -181,6 +190,7 @@ def compiler(nodes: List[BaseNode], sys: system, link_name: str):
 
         # Compiler settings
         'alignment': 4,
+        'memory_size': len(sys.memory),
     }
 
     print_func = ''.join([
@@ -199,12 +209,22 @@ def compiler(nodes: List[BaseNode], sys: system, link_name: str):
         '\n'
     ])
 
+    if input_mem:
+        input_instructions = ''.join([
+            makeLabel('_input'),
+            memoryFiller(input_mem, compilerDefaults['alignment']),
+            makeLabel('_start_final')
+        ])
+    else:
+        input_instructions = ''
+
     start = ''.join([
         makeLabel('_start'),
         makeInstruction('mov', 'fp', 'sp'),
         makeInstruction('mov', 'r4', 'sp'),
         makeInstruction('sub', 'r4', f'#{compilerDefaults["alignment"]}'),
-        makeInstruction('sub', 'sp', f'#{memory_size * compilerDefaults["alignment"]}'),
+        makeInstruction('sub', 'sp', f'#{compilerDefaults["memory_size"] * compilerDefaults["alignment"]}'),
+        input_instructions,
         makeInstruction('b', link_name)
     ])
 

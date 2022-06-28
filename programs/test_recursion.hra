@@ -3,10 +3,12 @@ make function recursion
     increment memory pointer by 1
     less compare between 0 1
     run function recursion
+    move instruction pointer to 12
 close function
 
 move memory pointer to 1
-increment memory pointer by 100
+increment memory pointer by 10
 move memory pointer to 0
 run function recursion
+show memory
 exit
