@@ -2,7 +2,7 @@
 
 ----
 ## Intro
-Human Readable Assembly (HRA) is a language which uses real words to make instructions.
+Human Readable Assembly (HRA) is a functionally written language which uses real words to make instructions.
 There are a couple of difference between actual assembly and HRA though:
 * The instruction-set more resembles the esolang [brainfuck](https://esolangs.org/wiki/Brainfuck)
 * HRA supports functions instead of loops which makes it easier to read.
@@ -10,6 +10,22 @@ There are a couple of difference between actual assembly and HRA though:
 HRA is turing complete because of the following statements:
 * By using conditional instruction jumping it can be used to manipulate the behaviour of the code to the desire of the writer
 * It's essentially brainfuck with added features and brainfuck is Turing complete.
+
+## Use the HRA toolkit
+For the HRA toolkit you need some library's
+
+To use the compiler you need a linux based machine (or wsl) because the compiler uses an ARM emulator
+```
+# Update package tree (if you haven't already)
+sudo apt-get update
+
+# Get the emulator package
+sudo apt-get qemu-user
+# Get the arm compiler for linux
+sudo apt-get gcc-arm-linux-gnueabi
+```
+The reasoning behind not using an Arduino Due with [hwlib](https://github.com/wovo/hwlib) was because the library hasn't been updated in a while. 
+I didn't want to jeopardise my project therefor I took the 'safe' route of using an emulator.
 
 ## Instruction-set 
 | Instruction                 | Parameters        | Action                                                                                                                    |
@@ -36,26 +52,76 @@ HRA is turing complete because of the following statements:
 | decrement memory pointer by | [value]           | Decrements the value of memory pointer with [value]                                                                       |
 | multiply memory pointer by  | [value]           | Multiplies the value of memory pointer with [value]                                                                       |
 
-## How to use
+## Use the CLI
 To use the HRA toolchain you need the 'hra-toolkit.py' file which is a CLI interface file. For information run the following command:
 ```
-python hra-toolkit.py -h
+python3 hra-toolkit.py -h
 ```
 
 ### CLI arguments
-| Argument                            | Action                                 |
-|-------------------------------------|----------------------------------------|
-| -f (--file) [path]                  | Filepath of file which will be ran     |
-| -it (--interpreter)                 | Use the interpreter on the given file  |
-| -m (--memsize) [int]                | Size of the memory                     |
-| -s (--state) ([final],[all],[none]) | Return which state you want to see     |
-| -i (--input) [inputs]               | Inputs for the virtual system memory   |
+| Argument                            | Action                                   |
+|-------------------------------------|------------------------------------------|
+| -f (--file) [path]                  | Filepath of file which will be ran       |
+| -it (--interpreter)                 | Use the interpreter on the given file    |
+| -c (--compiler)                     | Use the compiler on the given file       |
+| -m (--memsize) [int]                | Size of the memory                       |
+| -s (--state) ([final],[all],[none]) | Return which state you want to see       |
+| -i (--input) [inputs]               | Inputs for the virtual system memory     |
+| -o (--output) [path]                | Filepath of the compiler assembly output |
+| -r (--run)                          | Run the assembly output of the compiler  |
+| -va (--verboseAssembly)             | Generates an more verbose assembly       |
+| -so (--silentOutput)                | Returns only the printed statements      |
 
+## Requirements
+#### Inheritance
+* Classes with inheritance can be found [nodes.py](https://github.com/DaanZVW/ATP/blob/main/interpreter/nodes.py) where all nodes are based of [BaseNode](https://github.com/DaanZVW/ATP/blob/eea477608d5bf195fd4ca9404940f30761c8ec95/interpreter/nodes.py#L11)
+#### Printing classes
+* All classes are dataclasses which has a build in generator for the str function.
+#### Decorator
+* The [decorator](https://github.com/DaanZVW/ATP/blob/eea477608d5bf195fd4ca9404940f30761c8ec95/interpreter/decorator.py#L5)
+is used to run a generator. This is necessary because the [runner](https://github.com/DaanZVW/ATP/blob/eea477608d5bf195fd4ca9404940f30761c8ec95/interpreter/decorator.py#L5)
+is a generator function. This is designed that way so every 'state' will be returned when an instruction is
+called upon the virtual system. The decorator makes sure that it empties the generator and
+returns the list of states.
+#### Annotations
+* Python style and Haskell style annotations are used throughout the HRA repo.
+#### Usage of High Order Functions
+* Thoughout the HRA repo there is alot of usage of High Order Functions. Mostly in the interpreter.
+  * lexer.py
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L69)
+    * [map](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L73)
+    * [map](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L77)
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L81)
+    * [zip](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L82)
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L117)
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L150)
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L154)
+    * [map](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L155)
+    * [enumerate](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L155)
+    * [map](https://github.com/DaanZVW/ATP/blob/main/interpreter/lexer.py#L156)
+  * nodes.py
+    * [map](https://github.com/DaanZVW/ATP/blob/main/interpreter/nodes.py#L26)
+  * parser.py
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/parser.py#L79)
+    * [enumerate](https://github.com/DaanZVW/ATP/blob/main/interpreter/parser.py#L79)
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/parser.py#L101)
+  * runner.py
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/runner.py#L22)
+    * [map](https://github.com/DaanZVW/ATP/blob/main/interpreter/runner.py#L26)
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/runner.py#L32)
+  * system.py
+    * [filter](https://github.com/DaanZVW/ATP/blob/main/interpreter/system.py#L38)
+#### Running tests
+* In the HRA toolkit you can run tests with the following command
+```
+python3 testHRA.py
+```
 
+## Example code
 ### Recursive test program
 Run a recursive program
 ```
-python hra-toolkit.py -f programs/test_recursion.hra -it -s all
+python3 hra-toolkit.py -f programs/test_recursion.hra -it -s all
 ```
 This file is equivalent to this python code:
 ```python
@@ -93,7 +159,7 @@ Lastly it sets a value of 20 to check against and calls the function
 
 Run the even or odd example
 ```
-python hra-toolkit.py -f programs/is_even.hra -it -s final -i [value]
+python3 hra-toolkit.py -f programs/is_even.hra -it -s final -i [value]
 ```
 This file is equivalent to this python code:
 ```python
@@ -181,7 +247,7 @@ NOTE: This can be rewritten to only use 2 functions but for showcasing the funct
 ### Sommig
 Run the sommig example
 ```
-python hra-toolkit.py -f programs/sommig.hra -it -s final -i [value]
+python3 hra-toolkit.py -f programs/sommig.hra -it -s final -i [value]
 ```
 This file is equivalent to this python code:
 ```python
