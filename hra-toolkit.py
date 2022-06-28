@@ -5,7 +5,7 @@ import subprocess
 
 # HRA Files
 from interpreter import prepare_interpreter, runner
-from compiler import compiler
+from compiler import compiler, outputReader
 
 if __name__ == '__main__':
     cli_parser = argparse.ArgumentParser(description='CLI for the HRA toolkit')
@@ -32,6 +32,8 @@ if __name__ == '__main__':
                           help='Run a HRA compiled program')
     optional.add_argument('-va', '--verboseAssembly', action='store_true',
                           help='Gives extra information in the assembly file')
+    optional.add_argument('-so', '--silentOutput', action='store_true',
+                          help='Gives only the output from HRA interpreter or compiler')
 
     # Execute the parse_args() method
     args = vars(cli_parser.parse_args())
@@ -47,17 +49,21 @@ if __name__ == '__main__':
     if args.get('interpreter'):
         states = runner(nodes, prepared_system)
 
-        # Print state
-        if args.get('state') == 'all':
-            print(*states, sep='\n')
+        if not args.get('silentOutput'):
+            # Print state
+            if args.get('state') == 'all':
+                print(*states, sep='\n')
 
-        elif args.get('state') == 'final':
-            *_, final_state = states
-            print(final_state)
+            elif args.get('state') == 'final':
+                *_, final_state = states
+                print(final_state)
 
-        print(f'\nExited with code: 1')
+            print(f'\nExited with code: 1')
+        else:
+            print()
 
     if args.get('compiler'):
+        # Run the compiler
         if args.get('output') is None:
             output_filename = args.get('file')
             output_filename = os.path.splitext(output_filename)[0]
@@ -73,40 +79,43 @@ if __name__ == '__main__':
         )
         output_filename += '.asm'
 
+        # Write the output file
         with open(output_filename, 'w') as file:
             file.write(compiled_file)
 
-        print(f'Compiled HRA content to {output_filename}')
+        if not args.get('silentOutput'):
+            print(f'Compiled HRA content to {output_filename}')
 
         if args.get('run'):
-            print(f'Running the compiled program...\n')
+            if not args.get('silentOutput'):
+                print(f'Running the compiled program...\n')
 
             run_filename = output_filename
             base_filename = os.path.splitext(run_filename)[0]
             o_filename = base_filename + '.o'
             elf_filename = base_filename + '.elf'
 
+            # Compile the assembly to an object file
             o_status = subprocess.run(
                 ['arm-linux-gnueabi-as', run_filename, '-o', o_filename],
                 stdout=subprocess.PIPE
             )
+            # Compile the object file to an executable
             elf_status = subprocess.run(
                 ['arm-linux-gnueabi-gcc-9', o_filename, '-o', elf_filename, '-nostdlib'],
                 stdout=subprocess.PIPE
             )
+            # Remove the object file
             rm_o_status = subprocess.run(
                 ['rm', o_filename],
                 stdout=subprocess.PIPE
             )
+            # Run the executable
             run_status = subprocess.run(
                 ['qemu-arm', f'./{elf_filename}'],
                 stdout=subprocess.PIPE
             )
 
-            output = run_status.stdout
-            align = 4
-            output_converted = "".join(map(
-                lambda index: str(int.from_bytes(output[index * align:(index + 1) * align], 'little')),
-                range(0, int(len(output) / align))
-            ))
-            print(output_converted, f'Exited with code: {run_status.returncode}', sep='\n')
+            print(outputReader(run_status.stdout))
+            if not args.get('silentOutput'):
+                print(f'Exited with code: {run_status.returncode}', sep='\n')

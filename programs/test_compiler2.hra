@@ -1,8 +1,0 @@
-make function test
-    show in_function
-    move instruction pointer 
-close function
-
-
-show done
-exit

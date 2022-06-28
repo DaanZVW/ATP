@@ -7,6 +7,20 @@ from interpreter import RightMemoryNode, RightInstructionNode, LeftMemoryNode, L
 from interpreter import system
 
 
+# outputReader :: bytes -> str
+def outputReader(output: bytes) -> str:
+    """
+    Used for converting the compiler assembly output to readable string
+    :param output: output of the assembly file
+    :return: readable string
+    """
+    align = 4
+    return "".join(map(
+        lambda index: str(int.from_bytes(output[index * align:(index + 1) * align], 'little')),
+        range(0, int(len(output) / align))
+    ))
+
+
 # makeComment :: str -> str
 def makeComment(comment: str) -> str:
     """
